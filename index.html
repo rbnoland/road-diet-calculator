@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road Diet Cost-Benefit Analysis Calculator</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f4f0; --surface: #ffffff;
+  --border: rgba(0,0,0,0.12); --border-em: rgba(0,0,0,0.25);
+  --text: #1a1a18; --text-muted: #5f5e5a; --text-hint: #888780;
+  --blue: #378ADD; --green: #1D9E75; --red: #D85A30;
+  --info-bg: #E6F1FB; --info-text: #185FA5;
+  --radius-md: 8px; --radius-lg: 12px;
+}
+body { font-family: Georgia, serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem 1rem; }
+.container { max-width: 860px; margin: 0 auto; }
+header { margin-bottom: 2rem; border-bottom: 1px solid var(--border-em); padding-bottom: 1.25rem; }
+header h1 { font-size: 1.6rem; font-weight: normal; margin-bottom: 0.3rem; }
+header p { font-size: 0.875rem; color: var(--text-muted); font-family: 'Courier New', monospace; }
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+.card h2 { font-size: 0.78rem; font-weight: normal; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 1rem; font-family: 'Courier New', monospace; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 0.8rem; color: var(--text-muted); font-family: 'Courier New', monospace; }
+input[type="number"] { width: 100%; padding: 7px 10px; font-size: 14px; font-family: 'Courier New', monospace; border: 0.5px solid var(--border-em); border-radius: var(--radius-md); background: var(--surface); color: var(--text); outline: none; }
+input[type="number"]:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(55,138,221,0.15); }
+.tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
+.tab { padding: 5px 14px; font-size: 0.8rem; font-family: 'Courier New', monospace; cursor: pointer; border: 0.5px solid var(--border-em); border-radius: var(--radius-md); background: transparent; color: var(--text-muted); }
+.tab.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+.scale-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.scale-row label { font-size: 0.8rem; color: var(--text-muted); font-family: 'Courier New', monospace; min-width: 210px; }
+.scale-row input { width: 100px; }
+.note { font-size: 0.75rem; color: var(--text-hint); font-family: 'Courier New', monospace; margin-top: 6px; line-height: 1.5; }
+.calc-btn { display: inline-block; padding: 10px 28px; font-size: 0.9rem; font-family: 'Courier New', monospace; cursor: pointer; border: 1px solid var(--text); border-radius: var(--radius-md); background: var(--text); color: var(--surface); margin-top: 0.75rem; }
+.calc-btn:hover { background: transparent; color: var(--text); }
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+.metric { background: var(--bg); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
+.metric .lbl { font-size: 0.72rem; color: var(--text-hint); font-family: 'Courier New', monospace; margin-bottom: 4px; line-height: 1.3; }
+.metric .val { font-size: 1.25rem; color: var(--text); }
+.metric .val.pos { color: var(--green); }
+.metric .val.neg { color: var(--red); }
+.metric .val.neu { color: var(--blue); }
+.highlight-box { background: var(--info-bg); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-top: 0.75rem; font-size: 0.875rem; color: var(--info-text); line-height: 1.5; }
+.slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.slider-row label { font-size: 0.85rem; color: var(--text-muted); font-family: 'Courier New', monospace; white-space: nowrap; }
+input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; }
+#resultsArea { display: none; }
+.chart-wrap { width: 100%; }
+.legend { display: flex; gap: 16px; font-size: 0.75rem; color: var(--text-muted); font-family: 'Courier New', monospace; margin-top: 8px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-swatch { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.divider { border: none; border-top: 0.5px solid var(--border); margin: 1rem 0; }
+@media (max-width: 600px) { .scale-row label { min-width: 140px; font-size: 0.72rem; } .scale-row input { width: 80px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Road Diet Cost-Benefit Analysis</h1>
+    <p>4-lane &rarr; 3-lane conversion (2 through lanes + TWLTL) &middot; USDOT value parameters</p>
+  </header>
+
+  <div class="card">
+    <h2>Road characteristics</h2>
+    <div class="grid">
+      <div class="field"><label>Road length (miles)</label><input type="number" id="roadLength" value="1.0" min="0.1" step="0.1"></div>
+      <div class="field"><label>Initial speed limit (mph)</label><input type="number" id="speedBefore" value="40" min="20" max="65" step="5"></div>
+      <div class="field"><label>Target speed limit (mph)</label><input type="number" id="speedAfter" value="35" min="20" max="65" step="5"></div>
+      <div class="field"><label>Daily traffic &mdash; AADT (veh/day)</label><input type="number" id="aadt" value="12000" min="500" step="500"></div>
+      <div class="field"><label>Analysis period (years)</label><input type="number" id="years" value="20" min="5" max="40" step="1"></div>
+      <div class="field"><label>Discount rate (%)</label><input type="number" id="discountRate" value="3" min="1" max="10" step="0.5"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Crash data (annual counts)</h2>
+    <div class="tabs">
+      <button class="tab active" id="tabKABCO">KABCO scale</button>
+      <button class="tab" id="tabAIS">AIS scale</button>
+    </div>
+    <div id="panelKABCO">
+      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by severity. Decimals accepted for multi-year averages.</p>
+      <div class="scale-row"><label>K &mdash; Fatal</label><input type="number" id="kK" value="0" min="0" step="0.1"></div>
+      <div class="scale-row"><label>A &mdash; Incapacitating injury</label><input type="number" id="kA" value="1" min="0" step="0.1"></div>
+      <div class="scale-row"><label>B &mdash; Non-incapacitating injury</label><input type="number" id="kB" value="3" min="0" step="0.1"></div>
+      <div class="scale-row"><label>C &mdash; Possible injury</label><input type="number" id="kC" value="5" min="0" step="0.1"></div>
+      <div class="scale-row"><label>O &mdash; Property damage only</label><input type="number" id="kO" value="10" min="0" step="0.1"></div>
+      <p class="note">Unit costs (USDOT/KABCO, 2023$): K=$12,500,000 &middot; A=$582,000 &middot; B=$176,000 &middot; C=$97,600 &middot; O=$11,800</p>
+    </div>
+    <div id="panelAIS" style="display:none;">
+      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by AIS level. Decimals accepted.</p>
+      <div class="scale-row"><label>AIS 6 &mdash; Fatal</label><input type="number" id="aK" value="0" min="0" step="0.1"></div>
+      <div class="scale-row"><label>AIS 5 &mdash; Critical</label><input type="number" id="aA5" value="0" min="0" step="0.1"></div>
+      <div class="scale-row"><label>AIS 4 &mdash; Severe</label><input type="number" id="aA4" value="1" min="0" step="0.1"></div>
+      <div class="scale-row"><label>AIS 3 &mdash; Serious</label><input type="number" id="aA3" value="2" min="0" step="0.1"></div>
+      <div class="scale-row"><label>AIS 2 &mdash; Moderate</label><input type="number" id="aB" value="4" min="0" step="0.1"></div>
+      <div class="scale-row"><label>AIS 1 &mdash; Minor</label><input type="number" id="aC" value="6" min="0" step="0.1"></div>
+      <div class="scale-row"><label>AIS 0 &mdash; Property damage only</label><input type="number" id="aO" value="8" min="0" step="0.1"></div>
+      <p class="note">Unit costs (USDOT, 2023$): AIS6=$12.5M &middot; AIS5=$7.7M &middot; AIS4=$2.6M &middot; AIS3=$697K &middot; AIS2=$176K &middot; AIS1=$97.6K &middot; AIS0=$11.8K</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Cost parameters</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Restriping cost per lane-mile ($)</label>
+        <input type="number" id="stripeCost" value="25000" min="5000" step="1000">
+      </div>
+      <div class="field">
+        <label>Value of travel time ($/hr)</label>
+        <input type="number" id="vot" value="21.10" min="5" step="0.50">
+        <span class="note">USDOT 2023 guidance: $17.90&ndash;$21.10/hr personal travel</span>
+      </div>
+    </div>
+    <p class="note" style="margin-top:10px;">Restriping removes 2 lane-miles per road-mile. Travel delay computed from speed differential applied to annual VMT.</p>
+  </div>
+
+  <button class="calc-btn" id="calcBtn">Calculate &rarr;</button>
+
+  <div id="resultsArea">
+    <hr class="divider" style="margin-top:1.5rem;">
+
+    <div class="card">
+      <h2>Cost summary &mdash; present value</h2>
+      <div class="metrics-grid" id="costCards"></div>
+      <div id="breakevenBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>Net present value vs. crash reduction (%)</h2>
+      <div class="chart-wrap">
+        <canvas id="npvChart" style="display:block;"></canvas>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:#378ADD;"></span>Net Present Value (left axis)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#1D9E75;"></span>Benefit-Cost Ratio (right axis, dashed)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Benefit detail &mdash; explore reduction scenarios</h2>
+      <div class="slider-row">
+        <label>Crash reduction: <strong id="sliderVal">29%</strong></label>
+        <input type="range" min="0" max="100" value="29" id="reductionSlider" step="1">
+      </div>
+      <div class="metrics-grid" id="benefitCards"></div>
+    </div>
+
+    <div style="margin-top:1rem; padding:1rem 0; border-top:0.5px solid var(--border);">
+      <p class="note"><strong>Methodology notes:</strong><br>
+        VSL: $12.5M (USDOT 2023). Injury severity costs use KABCO/AIS equivalency factors per FHWA Highway Safety Manual.
+        Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) hrs/yr &times; VOT, discounted over the analysis period.
+        Restriping is a one-time Year-0 capital cost (not discounted).
+        NPV = PV(crash benefits) &minus; restriping capital &minus; PV(travel delay costs).
+        Research (FHWA) typically finds road diets reduce crashes 19&ndash;47%; central estimate ~29%.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var currentScale = 'KABCO';
+  var calcData = null;
+
+  // Tab switching
+  document.getElementById('tabKABCO').addEventListener('click', function () { setScale('KABCO'); });
+  document.getElementById('tabAIS').addEventListener('click',   function () { setScale('AIS');   });
+
+  function setScale(s) {
+    currentScale = s;
+    document.getElementById('panelKABCO').style.display = s === 'KABCO' ? '' : 'none';
+    document.getElementById('panelAIS').style.display   = s === 'AIS'   ? '' : 'none';
+    document.getElementById('tabKABCO').className = 'tab' + (s === 'KABCO' ? ' active' : '');
+    document.getElementById('tabAIS').className   = 'tab' + (s === 'AIS'   ? ' active' : '');
+  }
+
+  // Slider
+  document.getElementById('reductionSlider').addEventListener('input', function () {
+    updateSlider(parseInt(this.value, 10));
+  });
+
+  // Calculate button
+  document.getElementById('calcBtn').addEventListener('click', calculate);
+
+  // Helpers
+  function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function pvFactor(r, n) {
+    if (r === 0) return n;
+    return (1 - Math.pow(1 + r, -n)) / r;
+  }
+
+  function fmt(v) {
+    var abs = Math.abs(v), sign = v < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3).toLocaleString() + 'K';
+    return (v < 0 ? '-$' : '$') + Math.round(abs).toLocaleString();
+  }
+
+  function metricHTML(label, value, cls) {
+    return '<div class="metric"><div class="lbl">' + label +
+           '</div><div class="val ' + (cls || '') + '">' + value + '</div></div>';
+  }
+
+  function getAnnualCrashCost() {
+    if (currentScale === 'KABCO') {
+      return gv('kK') * 12500000 + gv('kA') * 582000 + gv('kB') * 176000 +
+             gv('kC') * 97600   + gv('kO') * 11800;
+    }
+    return gv('aK')  * 12500000 + gv('aA5') * 7700000 + gv('aA4') * 2600000 +
+           gv('aA3') * 697000   + gv('aB')  * 176000  + gv('aC')  * 97600   + gv('aO') * 11800;
+  }
+
+  function calculate() {
+    var len    = gv('roadLength');
+    var spd0   = gv('speedBefore');
+    var spd1   = gv('speedAfter');
+    var aadt   = gv('aadt');
+    var n      = gv('years');
+    var r      = gv('discountRate') / 100;
+    var stripe = gv('stripeCost');
+    var vot    = gv('vot');
+
+    var restripe      = 2 * len * stripe;
+    var delayHrsYear  = aadt * 365 * len * Math.max(0, 1 / spd1 - 1 / spd0);
+    var pvf           = pvFactor(r, n);
+    var pvDelay       = delayHrsYear * vot * pvf;
+    var annualCrash   = getAnnualCrashCost();
+    var pvCrashFull   = annualCrash * pvf;
+    var totalCost     = restripe + pvDelay;
+    var breakevenPct  = pvCrashFull > 0 ? Math.min(100, totalCost / pvCrashFull * 100) : null;
+
+    calcData = {
+      restripe: restripe, pvDelay: pvDelay, totalCost: totalCost,
+      pvCrashFull: pvCrashFull, annualCrash: annualCrash,
+      breakevenPct: breakevenPct, pvf: pvf
+    };
+
+    document.getElementById('resultsArea').style.display = 'block';
+
+    document.getElementById('costCards').innerHTML =
+      metricHTML('Restriping capital cost',        fmt(restripe),    '') +
+      metricHTML('Travel delay cost PV (' + Math.round(n) + ' yr)', fmt(pvDelay), 'neg') +
+      metricHTML('Total cost (PV)',                fmt(totalCost),   'neg') +
+      metricHTML('Annual crash cost (baseline)',   fmt(annualCrash), '') +
+      metricHTML('Crash cost PV (0% reduction)',   fmt(pvCrashFull), '');
+
+    var box = document.getElementById('breakevenBox');
+    if (breakevenPct !== null && pvCrashFull > 0) {
+      box.innerHTML = '<div class="highlight-box">To achieve a benefit-cost ratio &ge; 1, crashes must be reduced by at least <strong>' +
+        breakevenPct.toFixed(1) + '%</strong> &mdash; equivalent to avoiding <strong>' +
+        fmt(totalCost / pvf) + '</strong> per year in crash costs.</div>';
+    } else {
+      box.innerHTML = '<div class="highlight-box">No crash cost data entered &mdash; add crash counts above to compute the break-even threshold.</div>';
+    }
+
+    drawChart();
+    updateSlider(parseInt(document.getElementById('reductionSlider').value, 10));
+    document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ---- Vanilla canvas chart ----
+  function drawChart() {
+    if (!calcData) return;
+    var canvas = document.getElementById('npvChart');
+    var wrap   = canvas.parentElement;
+    var W = wrap.clientWidth || 700;
+    var H = 340;
+    canvas.width  = W;
+    canvas.height = H;
+
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    var PAD = { top: 28, right: 78, bottom: 54, left: 94 };
+    var cW  = W - PAD.left - PAD.right;
+    var cH  = H - PAD.top  - PAD.bottom;
+
+    var pvCrashFull = calcData.pvCrashFull;
+    var totalCost   = calcData.totalCost;
+
+    var npvArr = [], bcrArr = [];
+    for (var p = 0; p <= 100; p++) {
+      var ben = pvCrashFull * p / 100;
+      npvArr.push(ben - totalCost);
+      bcrArr.push(totalCost > 0 ? ben / totalCost : 0);
+    }
+
+    // Nice axis scale
+    function niceScale(lo, hi) {
+      var range = hi - lo || 1;
+      var mag   = Math.pow(10, Math.floor(Math.log(range) / Math.LN10));
+      var step  = mag;
+      if (range / step < 2) step /= 2;
+      while (range / step > 7) step *= 2;
+      return { lo: Math.floor(lo / step) * step, hi: Math.ceil(hi / step) * step, step: step };
+    }
+
+    var ns  = niceScale(Math.min.apply(null, npvArr), Math.max.apply(null, npvArr));
+    var bs  = niceScale(0, Math.max(Math.max.apply(null, bcrArr), 2));
+
+    function xPx(p)  { return PAD.left + (p / 100) * cW; }
+    function yN(v)   { return PAD.top  + cH - (v - ns.lo) / (ns.hi - ns.lo) * cH; }
+    function yB(v)   { return PAD.top  + cH - (v - bs.lo) / (bs.hi - bs.lo) * cH; }
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(55,138,221,0.09)';
+    ctx.lineWidth = 1;
+    for (var v = ns.lo; v <= ns.hi + ns.step * 0.01; v += ns.step) {
+      var yy = yN(v);
+      ctx.beginPath(); ctx.moveTo(PAD.left, yy); ctx.lineTo(PAD.left + cW, yy); ctx.stroke();
+    }
+
+    // Zero NPV line
+    if (ns.lo < 0 && ns.hi > 0) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(PAD.left, yN(0)); ctx.lineTo(PAD.left + cW, yN(0)); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // NPV area fill
+    ctx.beginPath();
+    ctx.moveTo(xPx(0), yN(npvArr[0]));
+    for (var i = 1; i <= 100; i++) ctx.lineTo(xPx(i), yN(npvArr[i]));
+    ctx.lineTo(xPx(100), PAD.top + cH);
+    ctx.lineTo(xPx(0),   PAD.top + cH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(55,138,221,0.08)';
+    ctx.fill();
+
+    // NPV line
+    ctx.beginPath();
+    ctx.moveTo(xPx(0), yN(npvArr[0]));
+    for (var i = 1; i <= 100; i++) ctx.lineTo(xPx(i), yN(npvArr[i]));
+    ctx.strokeStyle = '#378ADD'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
+
+    // BCR dashed line
+    ctx.beginPath();
+    ctx.moveTo(xPx(0), yB(bcrArr[0]));
+    for (var i = 1; i <= 100; i++) ctx.lineTo(xPx(i), yB(bcrArr[i]));
+    ctx.strokeStyle = '#1D9E75'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // BCR = 1 reference
+    if (bs.lo <= 1 && bs.hi >= 1) {
+      ctx.strokeStyle = 'rgba(29,158,117,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(PAD.left, yB(1)); ctx.lineTo(PAD.left + cW, yB(1)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#1D9E75'; ctx.font = '10px "Courier New",monospace'; ctx.textAlign = 'left';
+      ctx.fillText('BCR=1', PAD.left + cW + 6, yB(1) + 4);
+    }
+
+    // Axes borders
+    ctx.strokeStyle = 'rgba(0,0,0,0.13)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + cH);
+    ctx.moveTo(PAD.left, PAD.top + cH); ctx.lineTo(PAD.left + cW, PAD.top + cH);
+    ctx.moveTo(PAD.left + cW, PAD.top); ctx.lineTo(PAD.left + cW, PAD.top + cH);
+    ctx.stroke();
+
+    ctx.font = '11px "Courier New",monospace';
+
+    // Left (NPV) tick labels
+    ctx.fillStyle = '#378ADD'; ctx.textAlign = 'right';
+    for (var v = ns.lo; v <= ns.hi + ns.step * 0.01; v += ns.step) {
+      ctx.fillText(fmt(v), PAD.left - 6, yN(v) + 4);
+    }
+
+    // Right (BCR) tick labels
+    ctx.fillStyle = '#1D9E75'; ctx.textAlign = 'left';
+    for (var v = bs.lo; v <= bs.hi + bs.step * 0.01; v += bs.step) {
+      ctx.fillText(v.toFixed(1) + 'x', PAD.left + cW + 8, yB(v) + 4);
+    }
+
+    // X tick labels
+    ctx.fillStyle = '#888780'; ctx.textAlign = 'center';
+    for (var p = 0; p <= 100; p += 10) {
+      ctx.fillText(p + '%', xPx(p), PAD.top + cH + 18);
+    }
+
+    // Axis titles
+    ctx.save(); ctx.translate(13, PAD.top + cH / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#378ADD'; ctx.textAlign = 'center';
+    ctx.fillText('Net Present Value ($)', 0, 0);
+    ctx.restore();
+
+    ctx.save(); ctx.translate(W - 11, PAD.top + cH / 2); ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#1D9E75'; ctx.textAlign = 'center';
+    ctx.fillText('Benefit-Cost Ratio', 0, 0);
+    ctx.restore();
+
+    ctx.fillStyle = '#888780'; ctx.textAlign = 'center'; ctx.font = '11px "Courier New",monospace';
+    ctx.fillText('Crash reduction (%)', PAD.left + cW / 2, H - 8);
+  }
+
+  function updateSlider(val) {
+    document.getElementById('sliderVal').textContent = val + '%';
+    if (!calcData) return;
+    var ben    = calcData.pvCrashFull * val / 100;
+    var annBen = calcData.annualCrash  * val / 100;
+    var npv    = ben - calcData.totalCost;
+    var bcr    = calcData.totalCost > 0 ? ben / calcData.totalCost : 0;
+    document.getElementById('benefitCards').innerHTML =
+      metricHTML('Crash reduction applied',  val + '%',        'neu') +
+      metricHTML('Annual crash benefit',     fmt(annBen),      'pos') +
+      metricHTML('Crash benefit (PV)',        fmt(ben),         'pos') +
+      metricHTML('Net Present Value',        fmt(npv),         npv >= 0 ? 'pos' : 'neg') +
+      metricHTML('Benefit-Cost Ratio',       bcr.toFixed(2) + 'x', bcr >= 1 ? 'pos' : 'neg');
+  }
+
+  window.addEventListener('resize', drawChart);
+}());
+</script>
+</body>
+</html>
