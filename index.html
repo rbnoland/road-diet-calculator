@@ -8,13 +8,14 @@
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA3UlEQVR4nO2XsQ3DIBBFPye3WcFKkSYLMEqKDJgio7BAmhTRreABkgpE0IGJZY4U/AofJ973ByPZINE8z++0tqeY2cTPpAmXGJSb0DJB2vDUhOkBj0XrLcPAMNBWkx8451TB1loAf5BAs3sgTtS/rSSVBJxz2S2exOrOKiUQDDzup+Iiy/GGw+taDV2A0C+tfb48vw2UwFtUazZ7CKU9K0W5VdlDaK1tAkwlXkQeLKWw1vdrrfozbJVGOAPjKu6l7gkMA/0NpP9qmmJmQ37QAw5EW6BpImZRbkIDDgAfVFhZ0bcjiMcAAAAASUVORK5CYII=">
 <title>Road Diet Cost-Benefit Analysis Calculator</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #f5f4f0; --surface: #ffffff;
   --border: rgba(0,0,0,0.12); --border-em: rgba(0,0,0,0.25);
-  --text: #1a1a18; --text-muted: #5f5e5a; --text-hint: #888780;
+  --text: #080806; --text-muted: #1a1917; --text-hint: #3a3936;
   --blue: #378ADD; --green: #1D9E75; --red: #D85A30;
   --info-bg: #E6F1FB; --info-text: #185FA5;
   --radius-md: 8px; --radius-lg: 12px;
@@ -147,7 +148,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
       <button class="tab" id="tabAIS">AIS scale</button>
     </div>
     <div id="panelKABCO">
-      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by severity. Decimals accepted for multi-year averages.</p>
+      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by severity. Decimals accepted for multi-year averages. <span style="color:var(--blue);">Values are linked — editing here updates the AIS panel.</span></p>
       <div class="scale-row"><label>K &mdash; Fatal</label><input type="number" id="kK" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>A &mdash; Incapacitating injury</label><input type="number" id="kA" value="1" min="0" step="0.1"></div>
       <div class="scale-row"><label>B &mdash; Non-incapacitating injury</label><input type="number" id="kB" value="3" min="0" step="0.1"></div>
@@ -156,7 +157,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
       <p class="note">Unit costs (USDOT/KABCO, 2023$): K=$12,500,000 &middot; A=$582,000 &middot; B=$176,000 &middot; C=$97,600 &middot; O=$11,800</p>
     </div>
     <div id="panelAIS" style="display:none;">
-      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by AIS level. Decimals accepted.</p>
+      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by AIS level. Decimals accepted. <span style="color:var(--blue);">Values are linked — editing here updates the KABCO panel.</span></p>
       <div class="scale-row"><label>AIS 6 &mdash; Fatal</label><input type="number" id="aK" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 5 &mdash; Critical</label><input type="number" id="aA5" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 4 &mdash; Severe</label><input type="number" id="aA4" value="1" min="0" step="0.1"></div>
@@ -257,6 +258,88 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
   var currentScale = 'KABCO';
   var calcData = null;
+  var syncInProgress = false;
+
+  // ── AIS → KABCO conversion matrix (rows: AIS 0–6, cols: O, C, B, A, K) ──
+  // Source: AIS_to_KABCO_matrix.xlsx (FHWA)
+  // Each row is the probability distribution of KABCO categories for that AIS level.
+  // We use only O/C/B/A/K columns (ignoring U and Non-fatal unknown).
+  var AIS_TO_KABCO = [
+  //   O          C          B          A          K
+    [0.92534,   0.23437,   0.08347,   0.03437,   0.0    ],  // AIS 0
+    [0.07257,   0.68946,   0.76843,   0.55449,   0.0    ],  // AIS 1
+    [0.00198,   0.06391,   0.10898,   0.20908,   0.0    ],  // AIS 2
+    [0.000080,  0.01071,   0.03191,   0.14437,   0.0    ],  // AIS 3
+    [0.0,       0.00142,   0.00620,   0.03986,   0.0    ],  // AIS 4
+    [0.000030,  0.000130,  0.00101,   0.01783,   0.0    ],  // AIS 5
+    [0.0,       0.0,       0.0,       0.0,       1.0    ]   // AIS 6 → K
+  ];
+
+  // Compute KABCO counts from AIS counts using the matrix
+  function aisToKabco(ais) {
+    // ais = [ais0, ais1, ais2, ais3, ais4, ais5, ais6]
+    // Returns {O, C, B, A, K}
+    var kabco = {O:0, C:0, B:0, A:0, K:0};
+    var cols = ['O','C','B','A','K'];
+    for (var i = 0; i < 7; i++) {
+      for (var j = 0; j < 5; j++) {
+        kabco[cols[j]] += ais[i] * AIS_TO_KABCO[i][j];
+      }
+    }
+    return kabco;
+  }
+
+  // Compute AIS counts from KABCO counts using least-squares pseudo-inverse.
+  // We solve: M * x = b  where M is AIS_TO_KABCO (7×5 transposed → 5×7),
+  // b is the KABCO vector [O, C, B, A, K], x is AIS counts.
+  // We use a simplified proportional back-allocation approach that preserves totals.
+  function kabcoToAis(k) {
+    // Heuristic inversion: allocate each KABCO category to AIS levels proportionally
+    // using the matrix column weights, then combine.
+    var aisVec = [0,0,0,0,0,0,0];
+    var kabcoVals = [k.O, k.C, k.B, k.A, k.K];
+    var cols = [0,1,2,3,4]; // indices into AIS_TO_KABCO cols → O,C,B,A,K
+
+    for (var j = 0; j < 5; j++) {
+      var total = 0;
+      for (var i = 0; i < 7; i++) total += AIS_TO_KABCO[i][j];
+      if (total === 0) continue;
+      for (var i = 0; i < 7; i++) {
+        aisVec[i] += kabcoVals[j] * (AIS_TO_KABCO[i][j] / total);
+      }
+    }
+    return aisVec;
+  }
+
+  function round2(v) { return Math.round(v * 100) / 100; }
+
+  function syncKabcoFromAis() {
+    if (syncInProgress) return;
+    syncInProgress = true;
+    var ais = [gv('aO'), gv('aC'), gv('aB'), gv('aA3'), gv('aA4'), gv('aA5'), gv('aK')];
+    var kabco = aisToKabco(ais);
+    document.getElementById('kO').value = round2(kabco.O);
+    document.getElementById('kC').value = round2(kabco.C);
+    document.getElementById('kB').value = round2(kabco.B);
+    document.getElementById('kA').value = round2(kabco.A);
+    document.getElementById('kK').value = round2(kabco.K);
+    syncInProgress = false;
+  }
+
+  function syncAisFromKabco() {
+    if (syncInProgress) return;
+    syncInProgress = true;
+    var kabco = { O: gv('kO'), C: gv('kC'), B: gv('kB'), A: gv('kA'), K: gv('kK') };
+    var ais = kabcoToAis(kabco);
+    document.getElementById('aO').value  = round2(ais[0]);
+    document.getElementById('aC').value  = round2(ais[1]);
+    document.getElementById('aB').value  = round2(ais[2]);
+    document.getElementById('aA3').value = round2(ais[3]);
+    document.getElementById('aA4').value = round2(ais[4]);
+    document.getElementById('aA5').value = round2(ais[5]);
+    document.getElementById('aK').value  = round2(ais[6]);
+    syncInProgress = false;
+  }
 
   // ── Auto-recalculate on any number input change ──
   var debounceTimer = null;
@@ -264,8 +347,29 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(calculate, 120);
   }
-  document.querySelectorAll('input[type="number"]').forEach(function (el) {
-    el.addEventListener('input', scheduleCalc);
+
+  // Attach listeners with sync
+  var kabcoIds = ['kK','kA','kB','kC','kO'];
+  var aisIds   = ['aK','aA5','aA4','aA3','aB','aC','aO'];
+
+  kabcoIds.forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+      syncAisFromKabco();
+      scheduleCalc();
+    });
+  });
+  aisIds.forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+      syncKabcoFromAis();
+      scheduleCalc();
+    });
+  });
+
+  // Non-crash inputs
+  document.querySelectorAll('input[type="number"]').forEach(function(el) {
+    if (kabcoIds.indexOf(el.id) === -1 && aisIds.indexOf(el.id) === -1) {
+      el.addEventListener('input', scheduleCalc);
+    }
   });
 
   // Tab switching
@@ -453,7 +557,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + content + '</td>';
   }
 
-  // Kick off
+  // Kick off — sync AIS from default KABCO values, then calculate
+  syncAisFromKabco();
   calculate();
 }());
 </script>
