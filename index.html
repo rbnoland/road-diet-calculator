@@ -154,22 +154,33 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
   <!-- ── Crash data ── -->
   <div class="card">
-    <h2>Crash data (annual counts)</h2>
+    <h2>Crash data (average annual counts)</h2>
     <div class="tabs">
       <button class="tab active" id="tabKABCO">KABCO scale</button>
       <button class="tab" id="tabAIS">AIS scale</button>
     </div>
     <div id="panelKABCO">
-      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by severity. Decimals accepted for multi-year averages. <span style="color:var(--blue);">Values are linked — editing here updates the AIS panel.</span></p>
+      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by severity. Decimals accepted for multi-year averages. It is recommended to use five-year averages for crash counts. <span style="color:var(--blue);">Values are linked — editing here updates the AIS panel.</span></p>
       <div class="scale-row"><label>K &mdash; Fatal</label><input type="number" id="kK" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>A &mdash; Incapacitating injury</label><input type="number" id="kA" value="1" min="0" step="0.1"></div>
       <div class="scale-row"><label>B &mdash; Non-incapacitating injury</label><input type="number" id="kB" value="3" min="0" step="0.1"></div>
       <div class="scale-row"><label>C &mdash; Possible injury</label><input type="number" id="kC" value="5" min="0" step="0.1"></div>
       <div class="scale-row"><label>O &mdash; Property damage only</label><input type="number" id="kO" value="10" min="0" step="0.1"></div>
-      <p class="note">Unit costs (USDOT/KABCO, 2023$): K=$12,500,000 &middot; A=$582,000 &middot; B=$176,000 &middot; C=$97,600 &middot; O=$11,800</p>
+      <div style="margin-top:10px;">
+        <button type="button" id="toggleKabcoCosts" style="background:none;border:none;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:0.75rem;color:var(--blue);text-decoration:underline;">&#9656; Edit unit costs (USDOT/KABCO defaults)</button>
+        <div id="kabcoCostPanel" style="display:none;margin-top:8px;padding:10px 12px;background:var(--bg);border-radius:var(--radius-md);border:0.5px solid var(--border-em);">
+          <p class="note" style="margin-bottom:8px;">Unit costs in $ (USDOT/KABCO, 2023 defaults). Changes recalculate immediately.</p>
+          <div class="scale-row"><label>K &mdash; Fatal ($)</label><input type="number" id="cK" value="12500000" min="0" step="1000"></div>
+          <div class="scale-row"><label>A &mdash; Incapacitating injury ($)</label><input type="number" id="cA" value="582000" min="0" step="1000"></div>
+          <div class="scale-row"><label>B &mdash; Non-incapacitating injury ($)</label><input type="number" id="cB" value="176000" min="0" step="1000"></div>
+          <div class="scale-row"><label>C &mdash; Possible injury ($)</label><input type="number" id="cC" value="97600" min="0" step="100"></div>
+          <div class="scale-row"><label>O &mdash; Property damage only ($)</label><input type="number" id="cO" value="11800" min="0" step="100"></div>
+          <button type="button" id="resetKabcoCosts" style="margin-top:8px;padding:4px 12px;font-family:'Courier New',monospace;font-size:0.75rem;background:none;border:0.5px solid var(--border-em);border-radius:var(--radius-md);cursor:pointer;color:var(--text-muted);">Reset to USDOT defaults</button>
+        </div>
+      </div>
     </div>
     <div id="panelAIS" style="display:none;">
-      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by AIS level. Decimals accepted. <span style="color:var(--blue);">Values are linked — editing here updates the KABCO panel.</span></p>
+      <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by AIS level. Decimals accepted. It is recommended to use five-year averages for crash counts. <span style="color:var(--blue);">Values are linked — editing here updates the KABCO panel.</span></p>
       <div class="scale-row"><label>AIS 6 &mdash; Fatal</label><input type="number" id="aK" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 5 &mdash; Critical</label><input type="number" id="aA5" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 4 &mdash; Severe</label><input type="number" id="aA4" value="1" min="0" step="0.1"></div>
@@ -177,7 +188,20 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
       <div class="scale-row"><label>AIS 2 &mdash; Moderate</label><input type="number" id="aB" value="4" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 1 &mdash; Minor</label><input type="number" id="aC" value="6" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 0 &mdash; Property damage only</label><input type="number" id="aO" value="8" min="0" step="0.1"></div>
-      <p class="note">Unit costs (USDOT, 2023$): AIS6=$12.5M &middot; AIS5=$7.7M &middot; AIS4=$2.6M &middot; AIS3=$697K &middot; AIS2=$176K &middot; AIS1=$97.6K &middot; AIS0=$11.8K</p>
+      <div style="margin-top:10px;">
+        <button type="button" id="toggleAisCosts" style="background:none;border:none;padding:0;cursor:pointer;font-family:'Courier New',monospace;font-size:0.75rem;color:var(--blue);text-decoration:underline;">&#9656; Edit unit costs (USDOT/AIS defaults)</button>
+        <div id="aisCostPanel" style="display:none;margin-top:8px;padding:10px 12px;background:var(--bg);border-radius:var(--radius-md);border:0.5px solid var(--border-em);">
+          <p class="note" style="margin-bottom:8px;">Unit costs in $ (USDOT/AIS, 2023 defaults). Changes recalculate immediately.</p>
+          <div class="scale-row"><label>AIS 6 &mdash; Fatal ($)</label><input type="number" id="cAK" value="12500000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 5 &mdash; Critical ($)</label><input type="number" id="cA5" value="7700000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 4 &mdash; Severe ($)</label><input type="number" id="cA4" value="2600000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 3 &mdash; Serious ($)</label><input type="number" id="cA3" value="697000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 2 &mdash; Moderate ($)</label><input type="number" id="cA2" value="176000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 1 &mdash; Minor ($)</label><input type="number" id="cA1" value="97600" min="0" step="100"></div>
+          <div class="scale-row"><label>AIS 0 &mdash; Property damage only ($)</label><input type="number" id="cA0" value="11800" min="0" step="100"></div>
+          <button type="button" id="resetAisCosts" style="margin-top:8px;padding:4px 12px;font-family:'Courier New',monospace;font-size:0.75rem;background:none;border:0.5px solid var(--border-em);border-radius:var(--radius-md);cursor:pointer;color:var(--text-muted);">Reset to USDOT defaults</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -401,6 +425,40 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     }
   });
 
+  // ── Unit cost panel toggles ──
+  var KABCO_DEFAULTS = {cK:12500000, cA:582000, cB:176000, cC:97600, cO:11800};
+  var AIS_DEFAULTS   = {cAK:12500000, cA5:7700000, cA4:2600000, cA3:697000, cA2:176000, cA1:97600, cA0:11800};
+
+  document.getElementById('toggleKabcoCosts').addEventListener('click', function() {
+    var panel = document.getElementById('kabcoCostPanel');
+    var open  = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    this.innerHTML = (open ? '&#9656;' : '&#9662;') + ' Edit unit costs (USDOT/KABCO defaults)';
+  });
+  document.getElementById('toggleAisCosts').addEventListener('click', function() {
+    var panel = document.getElementById('aisCostPanel');
+    var open  = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    this.innerHTML = (open ? '&#9656;' : '&#9662;') + ' Edit unit costs (USDOT/AIS defaults)';
+  });
+  document.getElementById('resetKabcoCosts').addEventListener('click', function() {
+    Object.keys(KABCO_DEFAULTS).forEach(function(id) {
+      document.getElementById(id).value = KABCO_DEFAULTS[id];
+    });
+    calculate();
+  });
+  document.getElementById('resetAisCosts').addEventListener('click', function() {
+    Object.keys(AIS_DEFAULTS).forEach(function(id) {
+      document.getElementById(id).value = AIS_DEFAULTS[id];
+    });
+    calculate();
+  });
+
+  // Attach recalc listeners to all unit cost inputs
+  ['cK','cA','cB','cC','cO','cAK','cA5','cA4','cA3','cA2','cA1','cA0'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', scheduleCalc);
+  });
+
   // Tab switching
   document.getElementById('tabKABCO').addEventListener('click', function () { setScale('KABCO'); calculate(); });
   document.getElementById('tabAIS').addEventListener('click',   function () { setScale('AIS');   calculate(); });
@@ -420,7 +478,15 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
   });
 
   // ── Helpers ──
-  function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  var COST_DEFAULTS_MAP = {
+    cK:12500000, cA:582000, cB:176000, cC:97600, cO:11800,
+    cAK:12500000, cA5:7700000, cA4:2600000, cA3:697000, cA2:176000, cA1:97600, cA0:11800
+  };
+  function gv(id) {
+    var v = parseFloat(document.getElementById(id).value);
+    if (isNaN(v)) return (id in COST_DEFAULTS_MAP) ? COST_DEFAULTS_MAP[id] : 0;
+    return v;
+  }
 
   function fmt(v) {
     var abs = Math.abs(v), sign = v < 0 ? '-' : '';
@@ -436,11 +502,11 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
   function getAnnualCrashCost() {
     if (currentScale === 'KABCO') {
-      return gv('kK') * 12500000 + gv('kA') * 582000 + gv('kB') * 176000 +
-             gv('kC') * 97600    + gv('kO') * 11800;
+      return gv('kK') * gv('cK') + gv('kA') * gv('cA') + gv('kB') * gv('cB') +
+             gv('kC') * gv('cC') + gv('kO') * gv('cO');
     }
-    return gv('aK')  * 12500000 + gv('aA5') * 7700000 + gv('aA4') * 2600000 +
-           gv('aA3') * 697000   + gv('aB')  * 176000  + gv('aC')  * 97600   + gv('aO') * 11800;
+    return gv('aK')  * gv('cAK') + gv('aA5') * gv('cA5') + gv('aA4') * gv('cA4') +
+           gv('aA3') * gv('cA3') + gv('aB')  * gv('cA2') + gv('aC')  * gv('cA1') + gv('aO') * gv('cA0');
   }
 
   // ── Main calculation ──
