@@ -15,7 +15,7 @@
 :root {
   --bg: #f5f4f0; --surface: #ffffff;
   --border: rgba(0,0,0,0.12); --border-em: rgba(0,0,0,0.25);
-  --text: #080806; --text-muted: #1a1917; --text-hint: #3a3936;
+  --text: #000000; --text-muted: #0d0d0c; --text-hint: #1f1f1d;
   --blue: #378ADD; --green: #1D9E75; --red: #D85A30;
   --info-bg: #E6F1FB; --info-text: #185FA5;
   --radius-md: 8px; --radius-lg: 12px;
@@ -126,6 +126,18 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     <p>4-lane &rarr; 3-lane conversion (2 through lanes + TWLTL) &middot; USDOT value parameters</p>
   </header>
 
+  <!-- ── Project name ── -->
+  <div class="card" style="margin-bottom:1rem;">
+    <h2>Project</h2>
+    <div class="field" style="max-width:480px;">
+      <label>Project name</label>
+      <input type="text" id="projectName" placeholder="e.g. Main St Road Diet — Springfield" style="
+        width:100%; padding:7px 10px; font-size:14px; font-family:'Courier New',monospace;
+        border:0.5px solid rgba(0,0,0,0.25); border-radius:8px;
+        background:#fff; color:#000; outline:none;">
+    </div>
+  </div>
+
   <!-- ── Road characteristics ── -->
   <div class="card">
     <h2>Road characteristics</h2>
@@ -216,15 +228,15 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     <div class="card">
       <h2>Year-by-year discounted cash flow</h2>
       <p class="note" style="margin-bottom:0.85rem;">
-        Crash benefit reflects the crash reduction % set by the slider above.
-        Year&nbsp;0 = restriping capital (one-time, undiscounted). All subsequent values are present value.
+        Crash reduction benefit reflects the crash reduction % set by the slider above.
+        Year&nbsp;0 = restriping cost (one-time, undiscounted). All subsequent values are present value.
       </p>
       <div class="tbl-outer">
         <table id="pvTable">
           <thead>
             <tr>
               <th>Year</th>
-              <th>Crash benefit (PV)</th>
+              <th>Crash reduction benefit (PV)</th>
               <th>Delay cost (PV)</th>
               <th>Capital cost</th>
               <th>Net cash flow (PV)</th>
@@ -243,11 +255,27 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
       <p class="note"><strong>Methodology notes:</strong><br>
         VSL: $12.5M (USDOT 2023), escalated at 1.07%/yr. Injury severity costs use KABCO/AIS equivalency factors per FHWA Highway Safety Manual.
         Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) veh-hrs/yr &times; blended VOT (personal &times; occupancy + 2&times; commercial rate), escalated at 1.6%/yr, discounted over the analysis period.
-        Restriping is a one-time Year-0 capital cost (not discounted).
-        NPV = PV(crash benefits at chosen reduction %) &minus; restriping capital &minus; PV(travel delay costs).
+        Restriping is a one-time Year-0 cost (not discounted).
+        NPV = PV(crash reduction benefits at chosen reduction %) &minus; restriping cost &minus; PV(travel delay costs).
         Research (FHWA) typically finds road diets reduce crashes 19&ndash;47%; central estimate ~29%.
       </p>
     </div>
+  </div>
+
+  <!-- ── Print PDF Button ── -->
+  <div style="margin-top:1.5rem; padding:1rem 0; text-align:center;">
+    <button id="printPdfBtn" style="
+      padding: 10px 28px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      background: var(--text);
+      color: var(--surface);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      letter-spacing: 0.05em;
+    ">&#x1F5A8;&nbsp; Print / Save PDF Summary</button>
+    <p class="note" style="margin-top:6px;">Opens a print-ready summary. Use your browser's &ldquo;Save as PDF&rdquo; option.</p>
   </div>
 
 </div><!-- /.container -->
@@ -464,12 +492,12 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
     // ── Summary cards ──
     document.getElementById('costCards').innerHTML =
-      metricHTML('Restriping capital',               fmt(restripe),                   '') +
+      metricHTML('Restriping cost',                    fmt(restripe),                   '') +
       metricHTML('Blended VOT yr-1 (occ+comm.)',     '$' + votBlendedY1.toFixed(2) + '/hr', 'neu') +
       metricHTML('Delay cost PV (' + n + ' yr)',     fmt(pvDelay),                    'neg') +
       metricHTML('Total cost (PV)',                  fmt(totalCost),                  'neg') +
       metricHTML('Annual crash cost (baseline)',      fmt(annualCrashBase),            '') +
-      metricHTML('Crash benefit PV (100% reduction)', fmt(pvCrashFull),               'pos');
+      metricHTML('Crash reduction benefit PV (100%)', fmt(pvCrashFull),               'pos');
 
     var box = document.getElementById('breakevenBox');
     if (breakevenPct !== null && pvCrashFull > 0) {
@@ -493,9 +521,9 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     var npv    = ben - calcData.totalCost;
     var bcr    = calcData.totalCost > 0 ? ben / calcData.totalCost : 0;
     document.getElementById('benefitCards').innerHTML =
-      metricHTML('Crash reduction applied',  val + '%',                   'neu') +
-      metricHTML('Annual crash benefit',     fmt(annBen),                 'pos') +
-      metricHTML('Crash benefit (PV)',        fmt(ben),                    'pos') +
+      metricHTML('Crash reduction applied',         val + '%',                   'neu') +
+      metricHTML('Annual crash reduction benefit',   fmt(annBen),                 'pos') +
+      metricHTML('Crash reduction benefit (PV)',     fmt(ben),                    'pos') +
       metricHTML('Net Present Value',        fmt(npv),                    npv >= 0 ? 'pos' : 'neg') +
       metricHTML('Benefit-Cost Ratio',       bcr.toFixed(2) + '&times;',  bcr >= 1 ? 'pos' : 'neg');
   }
@@ -560,6 +588,170 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
   // Kick off — sync AIS from default KABCO values, then calculate
   syncAisFromKabco();
   calculate();
+
+  // ── Print / PDF Summary ──
+  document.getElementById('printPdfBtn').addEventListener('click', function () {
+    if (!calcData) { alert('Please wait for calculations to complete.'); return; }
+
+    var reductionPct = parseInt(document.getElementById('reductionSlider').value, 10);
+    var ben    = calcData.pvCrashFull * reductionPct / 100;
+    var annBen = calcData.annualCrash  * reductionPct / 100;
+    var npv    = ben - calcData.totalCost;
+    var bcr    = calcData.totalCost > 0 ? ben / calcData.totalCost : 0;
+    var n      = calcData.n;
+
+    // Build year-by-year rows
+    var tableRows = '';
+    var cumNPV = -calcData.restripe;
+    tableRows += '<tr><td>0</td><td>—</td><td>—</td><td>' + fmt(-calcData.restripe) +
+      '</td><td>' + fmt(-calcData.restripe) + '</td><td>' + fmt(cumNPV) + '</td></tr>';
+    for (var i = 0; i < calcData.pvCrashPerYear.length; i++) {
+      var t       = i + 1;
+      var crashPV = calcData.pvCrashPerYear[i] * reductionPct / 100;
+      var delayPV = calcData.pvDelayPerYear[i];
+      var netPV   = crashPV - delayPV;
+      cumNPV     += netPV;
+      tableRows += '<tr><td>' + t + '</td><td>' + fmt(crashPV) + '</td><td>' + fmt(-delayPV) +
+        '</td><td>—</td><td>' + fmt(netPV) + '</td><td>' + fmt(cumNPV) + '</td></tr>';
+    }
+    var totCrash   = calcData.pvCrashFull * reductionPct / 100;
+    var totDelay   = calcData.pvDelay;
+    var totCapital = calcData.restripe;
+    var totNPV     = totCrash - totDelay - totCapital;
+    var footRow = '<tr class="foot"><td>Total</td><td>' + fmt(totCrash) + '</td><td>' +
+      fmt(-totDelay) + '</td><td>' + fmt(-totCapital) + '</td><td></td><td>' + fmt(totNPV) + '</td></tr>';
+
+    // Crash inputs summary
+    var crashInputs = '';
+    if (currentScale === 'KABCO') {
+      crashInputs = '<tr><td>K – Fatal</td><td>' + gv('kK') + '</td></tr>' +
+        '<tr><td>A – Incapacitating injury</td><td>' + gv('kA') + '</td></tr>' +
+        '<tr><td>B – Non-incapacitating injury</td><td>' + gv('kB') + '</td></tr>' +
+        '<tr><td>C – Possible injury</td><td>' + gv('kC') + '</td></tr>' +
+        '<tr><td>O – Property damage only</td><td>' + gv('kO') + '</td></tr>';
+    } else {
+      crashInputs = '<tr><td>AIS 6 – Fatal</td><td>' + gv('aK') + '</td></tr>' +
+        '<tr><td>AIS 5 – Critical</td><td>' + gv('aA5') + '</td></tr>' +
+        '<tr><td>AIS 4 – Severe</td><td>' + gv('aA4') + '</td></tr>' +
+        '<tr><td>AIS 3 – Serious</td><td>' + gv('aA3') + '</td></tr>' +
+        '<tr><td>AIS 2 – Moderate</td><td>' + gv('aB') + '</td></tr>' +
+        '<tr><td>AIS 1 – Minor</td><td>' + gv('aC') + '</td></tr>' +
+        '<tr><td>AIS 0 – Property damage only</td><td>' + gv('aO') + '</td></tr>';
+    }
+
+    var projectName = (document.getElementById('projectName').value || '').trim();
+    var now = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+    var breakevenText = calcData.breakevenPct !== null
+      ? 'Crashes must be reduced by at least <strong>' + calcData.breakevenPct.toFixed(1) + '%</strong> for BCR ≥ 1.'
+      : 'No crash data entered — break-even threshold not available.';
+
+    var pdfTitle = projectName ? projectName + ' — Road Diet CBA Summary' : 'Road Diet Cost-Benefit Analysis Summary';
+    var projectLine = projectName ? '<p class="meta" style="font-size:11pt;font-weight:bold;margin-bottom:2px;">' + projectName + '</p>' : '';
+
+    var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+      '<title>' + pdfTitle + '</title><style>' +
+      'body{font-family:Georgia,serif;font-size:11pt;color:#000;margin:0;padding:0;}' +
+      '.page{max-width:720px;margin:0 auto;padding:32px 36px;}' +
+      'h1{font-size:15pt;font-weight:normal;margin-bottom:4px;}' +
+      'h2{font-size:9.5pt;font-weight:normal;text-transform:uppercase;letter-spacing:0.08em;' +
+         'font-family:"Courier New",monospace;border-bottom:1px solid #ccc;padding-bottom:4px;' +
+         'margin:20px 0 10px;}' +
+      '.meta{font-family:"Courier New",monospace;font-size:8.5pt;color:#333;margin-bottom:18px;}' +
+      'table{width:100%;border-collapse:collapse;font-family:"Courier New",monospace;font-size:9pt;margin-bottom:10px;}' +
+      'th{background:#000;color:#fff;padding:5px 8px;text-align:right;font-weight:normal;font-size:8.5pt;}' +
+      'th:first-child{text-align:left;}' +
+      'td{padding:4px 8px;text-align:right;border-bottom:0.5px solid #ddd;}' +
+      'td:first-child{text-align:left;}' +
+      'tr:nth-child(even){background:#f8f8f6;}' +
+      'tr.foot td{font-weight:bold;background:#ececea;border-top:1px solid #999;}' +
+      '.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}' +
+      '.kv-table td{text-align:left;padding:3px 8px;}' +
+      '.kv-table td:last-child{text-align:right;font-family:"Courier New",monospace;}' +
+      '.highlight{background:#e6f1fb;border-radius:4px;padding:8px 12px;font-size:9.5pt;' +
+         'color:#000;margin:8px 0 14px;}' +
+      '.note{font-size:8pt;font-family:"Courier New",monospace;color:#333;line-height:1.5;margin-top:12px;}' +
+      '.pos{color:#1a7a58;} .neg{color:#b84020;}' +
+      'footer{margin-top:24px;border-top:0.5px solid #ccc;padding-top:8px;' +
+         'font-size:7.5pt;font-family:"Courier New",monospace;color:#555;}' +
+      '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
+      '</style></head><body><div class="page">' +
+
+      projectLine +
+      '<h1>Road Diet Cost-Benefit Analysis Summary</h1>' +
+      '<p class="meta">4-lane → 3-lane conversion (2 through lanes + TWLTL) &nbsp;·&nbsp; Generated: ' + now + '</p>' +
+
+      '<h2>Inputs — Road Characteristics</h2>' +
+      '<div class="two-col">' +
+        '<table class="kv-table"><tbody>' +
+          '<tr><td>Road length</td><td>' + gv('roadLength') + ' miles</td></tr>' +
+          '<tr><td>Initial speed limit</td><td>' + gv('speedBefore') + ' mph</td></tr>' +
+          '<tr><td>Target speed limit</td><td>' + gv('speedAfter') + ' mph</td></tr>' +
+          '<tr><td>AADT</td><td>' + gv('aadt').toLocaleString() + ' veh/day</td></tr>' +
+        '</tbody></table>' +
+        '<table class="kv-table"><tbody>' +
+          '<tr><td>Commercial traffic</td><td>' + gv('pctCommercial') + '%</td></tr>' +
+          '<tr><td>Analysis period</td><td>' + gv('years') + ' years</td></tr>' +
+          '<tr><td>Discount rate</td><td>' + gv('discountRate') + '%</td></tr>' +
+          '<tr><td>Vehicle occupancy</td><td>' + gv('vehicleOccupancy') + ' persons/veh</td></tr>' +
+        '</tbody></table>' +
+      '</div>' +
+
+      '<h2>Inputs — Crash Data (' + currentScale + ' Scale, Annual Counts)</h2>' +
+      '<table class="kv-table"><tbody>' + crashInputs + '</tbody></table>' +
+
+      '<h2>Inputs — Cost Parameters</h2>' +
+      '<table class="kv-table"><tbody>' +
+        '<tr><td>Restriping cost</td><td>$' + gv('stripeCost').toLocaleString() + ' / lane-mile</td></tr>' +
+        '<tr><td>Value of travel time</td><td>$' + gv('vot').toFixed(2) + ' / person-hr</td></tr>' +
+      '</tbody></table>' +
+
+      '<h2>Calculations — Cost &amp; Benefit Summary (Present Value)</h2>' +
+      '<table class="kv-table"><tbody>' +
+        '<tr><td>Restriping cost (Year 0)</td><td>' + fmt(calcData.restripe) + '</td></tr>' +
+        '<tr><td>Annual crash cost (baseline)</td><td>' + fmt(calcData.annualCrash) + '</td></tr>' +
+        '<tr><td>Delay cost PV (' + n + ' yr)</td><td class="neg">' + fmt(calcData.pvDelay) + '</td></tr>' +
+        '<tr><td>Total cost PV</td><td class="neg">' + fmt(calcData.totalCost) + '</td></tr>' +
+        '<tr><td>Crash reduction benefit PV (100% reduction)</td><td class="pos">' + fmt(calcData.pvCrashFull) + '</td></tr>' +
+      '</tbody></table>' +
+      '<div class="highlight">' + breakevenText + '</div>' +
+
+      '<h2>Results — Scenario: ' + reductionPct + '% Crash Reduction</h2>' +
+      '<table class="kv-table"><tbody>' +
+        '<tr><td>Annual crash reduction benefit</td><td class="pos">' + fmt(annBen) + '</td></tr>' +
+        '<tr><td>Crash reduction benefit PV</td><td class="pos">' + fmt(ben) + '</td></tr>' +
+        '<tr><td>Net Present Value (NPV)</td><td class="' + (npv >= 0 ? 'pos' : 'neg') + '">' + fmt(npv) + '</td></tr>' +
+        '<tr><td>Benefit-Cost Ratio (BCR)</td><td class="' + (bcr >= 1 ? 'pos' : 'neg') + '">' + bcr.toFixed(2) + '×</td></tr>' +
+      '</tbody></table>' +
+
+      '<h2>Year-by-Year Discounted Cash Flow</h2>' +
+      '<table><thead><tr>' +
+        '<th>Year</th><th>Crash Reduction Benefit (PV)</th><th>Delay Cost (PV)</th>' +
+        '<th>Restriping Cost</th><th>Net Cash Flow (PV)</th><th>Cumulative NPV</th>' +
+      '</tr></thead><tbody>' + tableRows + '</tbody><tfoot>' + footRow + '</tfoot></table>' +
+
+      '<p class="note"><strong>Methodology:</strong> VSL $12.5M (USDOT 2023), escalated 1.07%/yr. ' +
+      'Travel delay = AADT × 365 × length × (1/v₂ − 1/v₁) veh-hrs/yr × blended VOT, escalated 1.6%/yr. ' +
+      'Restriping is a one-time Year-0 cost (not discounted). ' +
+      'NPV = PV(crash reduction benefits) − restriping cost − PV(delay costs). ' +
+      'FHWA research: road diets typically reduce crashes 19–47%; central estimate ~29%.</p>' +
+
+      '<footer>Road Diet Cost-Benefit Analysis Calculator &nbsp;·&nbsp; Rutgers–New Brunswick, Edward J. Bloustein School / Alan M. Voorhees Transportation Center</footer>' +
+      '</div>' +
+      '<script>' +
+      'window.onload = function() {' +
+      '  var slug = ' + JSON.stringify(projectName ? projectName.replace(/[^a-zA-Z0-9 _-]/g, '').trim().replace(/\s+/g, '_') : 'Road_Diet_CBA') + ';' +
+      '  document.title = slug;' +
+      '  window.print();' +
+      '};' +
+      '<\/script>' +
+      '</body></html>';
+
+    var win = window.open('', '_blank');
+    if (!win) { alert('Pop-up blocked. Please allow pop-ups for this page and try again.'); return; }
+    win.document.write(html);
+    win.document.close();
+  });
+
 }());
 </script>
 </body>
