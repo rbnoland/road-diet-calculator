@@ -186,8 +186,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
     <h2>Cost parameters</h2>
     <div class="grid">
       <div class="field">
-        <label>Restriping cost per lane-mile ($)</label>
-        <input type="number" id="stripeCost" value="25000" min="5000" step="1000">
+        <label>Capital cost — total project ($)</label>
+        <input type="number" id="stripeCost" value="50000" min="0" step="1000">
       </div>
       <div class="field">
         <label>Value of travel time ($/person-hr)</label>
@@ -200,7 +200,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
         <span class="note">Personal vehicles only. Converts veh-hrs to person-hrs of delay.</span>
       </div>
     </div>
-    <p class="note" style="margin-top:10px;">Restriping removes 2 lane-miles per road-mile. VSL escalates 1.07%/yr; VOT escalates 1.6%/yr.</p>
+    <p class="note" style="margin-top:10px;">Capital cost is a one-time Year-0 expense (not discounted). VSL escalates 1.07%/yr; VOT escalates 1.6%/yr.</p>
   </div>
 
   <!-- ── Results ── -->
@@ -226,7 +226,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
     <!-- Year-by-year table -->
     <div class="card">
-      <h2>Year-by-year discounted cash flow</h2>
+      <h2>Annual benefits and costs and cumulative NPV</h2>
       <p class="note" style="margin-bottom:0.85rem;">
         Crash reduction benefit reflects the crash reduction % set by the slider above.
         Year&nbsp;0 = restriping cost (one-time, undiscounted). All subsequent values are present value.
@@ -239,7 +239,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
               <th>Crash reduction benefit (PV)</th>
               <th>Delay cost (PV)</th>
               <th>Capital cost</th>
-              <th>Net cash flow (PV)</th>
+              <th>Present value</th>
               <th>Cumulative NPV</th>
             </tr>
           </thead>
@@ -255,8 +255,8 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
       <p class="note"><strong>Methodology notes:</strong><br>
         VSL: $12.5M (USDOT 2023), escalated at 1.07%/yr. Injury severity costs use KABCO/AIS equivalency factors per FHWA Highway Safety Manual.
         Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) veh-hrs/yr &times; blended VOT (personal &times; occupancy + 2&times; commercial rate), escalated at 1.6%/yr, discounted over the analysis period.
-        Restriping is a one-time Year-0 cost (not discounted).
-        NPV = PV(crash reduction benefits at chosen reduction %) &minus; restriping cost &minus; PV(travel delay costs).
+        Capital cost is a one-time Year-0 expense (not discounted).
+        NPV = PV(crash reduction benefits at chosen reduction %) &minus; capital cost &minus; PV(travel delay costs).
         Research (FHWA) typically finds road diets reduce crashes 19&ndash;47%; central estimate ~29%.
       </p>
     </div>
@@ -478,7 +478,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
       pvDelay     += pvDelayT;
     }
 
-    var restripe     = 2 * len * stripe;
+    var restripe     = stripe;
     var totalCost    = restripe + pvDelay;
     var breakevenPct = pvCrashFull > 0 ? Math.min(100, totalCost / pvCrashFull * 100) : null;
     var votBlendedY1 = vot * Math.pow(1 + votEsc, 1) * blendFactor;
@@ -492,7 +492,7 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
     // ── Summary cards ──
     document.getElementById('costCards').innerHTML =
-      metricHTML('Restriping cost',                    fmt(restripe),                   '') +
+      metricHTML('Capital cost (Year 0)',                fmt(restripe),                   '') +
       metricHTML('Blended VOT yr-1 (occ+comm.)',     '$' + votBlendedY1.toFixed(2) + '/hr', 'neu') +
       metricHTML('Delay cost PV (' + n + ' yr)',     fmt(pvDelay),                    'neg') +
       metricHTML('Total cost (PV)',                  fmt(totalCost),                  'neg') +
@@ -701,13 +701,13 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
 
       '<h2>Inputs — Cost Parameters</h2>' +
       '<table class="kv-table"><tbody>' +
-        '<tr><td>Restriping cost</td><td>$' + gv('stripeCost').toLocaleString() + ' / lane-mile</td></tr>' +
+        '<tr><td>Capital cost (total project)</td><td>$' + gv('stripeCost').toLocaleString() + '</td></tr>' +
         '<tr><td>Value of travel time</td><td>$' + gv('vot').toFixed(2) + ' / person-hr</td></tr>' +
       '</tbody></table>' +
 
       '<h2>Calculations — Cost &amp; Benefit Summary (Present Value)</h2>' +
       '<table class="kv-table"><tbody>' +
-        '<tr><td>Restriping cost (Year 0)</td><td>' + fmt(calcData.restripe) + '</td></tr>' +
+        '<tr><td>Capital cost (Year 0)</td><td>' + fmt(calcData.restripe) + '</td></tr>' +
         '<tr><td>Annual crash cost (baseline)</td><td>' + fmt(calcData.annualCrash) + '</td></tr>' +
         '<tr><td>Delay cost PV (' + n + ' yr)</td><td class="neg">' + fmt(calcData.pvDelay) + '</td></tr>' +
         '<tr><td>Total cost PV</td><td class="neg">' + fmt(calcData.totalCost) + '</td></tr>' +
@@ -723,16 +723,16 @@ input[type="range"] { flex: 1; accent-color: var(--blue); cursor: pointer; min-w
         '<tr><td>Benefit-Cost Ratio (BCR)</td><td class="' + (bcr >= 1 ? 'pos' : 'neg') + '">' + bcr.toFixed(2) + '×</td></tr>' +
       '</tbody></table>' +
 
-      '<h2>Year-by-Year Discounted Cash Flow</h2>' +
+      '<h2>Annual benefits and costs and cumulative NPV</h2>' +
       '<table><thead><tr>' +
         '<th>Year</th><th>Crash Reduction Benefit (PV)</th><th>Delay Cost (PV)</th>' +
-        '<th>Restriping Cost</th><th>Net Cash Flow (PV)</th><th>Cumulative NPV</th>' +
+        '<th>Capital Cost</th><th>Present Value</th><th>Cumulative NPV</th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody><tfoot>' + footRow + '</tfoot></table>' +
 
       '<p class="note"><strong>Methodology:</strong> VSL $12.5M (USDOT 2023), escalated 1.07%/yr. ' +
       'Travel delay = AADT × 365 × length × (1/v₂ − 1/v₁) veh-hrs/yr × blended VOT, escalated 1.6%/yr. ' +
-      'Restriping is a one-time Year-0 cost (not discounted). ' +
-      'NPV = PV(crash reduction benefits) − restriping cost − PV(delay costs). ' +
+      'Capital cost is a one-time Year-0 expense (not discounted). ' +
+      'NPV = PV(crash reduction benefits) − capital cost − PV(delay costs). ' +
       'FHWA research: road diets typically reduce crashes 19–47%; central estimate ~29%.</p>' +
 
       '<footer>Road Diet Cost-Benefit Analysis Calculator &nbsp;·&nbsp; Rutgers–New Brunswick, Edward J. Bloustein School / Alan M. Voorhees Transportation Center</footer>' +
