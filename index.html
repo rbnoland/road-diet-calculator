@@ -496,6 +496,7 @@
       <div class="field"><label>Daily traffic &mdash; AADT (veh/day)</label><input type="number" id="aadt" value="12000" min="500" step="500"></div>
       <div class="field"><label>Commercial traffic (%)</label><input type="number" id="pctCommercial" value="10" min="0" max="100" step="1"><span class="note">Trucks/freight; valued at 2&times; personal travel time rate</span></div>
       <div class="field"><label>Analysis period (years)</label><input type="number" id="years" value="20" min="5" max="40" step="1"></div>
+      <div class="field"><label>Project opening year</label><input type="number" id="openYear" value="2026" min="2024" max="2060" step="1"><span class="note">Costs in 2024 $ are escalated to this year (VSL 1.07%/yr, VOT 1.6%/yr).</span></div>
       <div class="field"><label>Discount rate (%)</label><input type="number" id="discountRate" value="3" min="1" max="10" step="0.5"></div>
     </div>
   </div>
@@ -504,10 +505,10 @@
   <div class="card">
     <h2>Crash data (average annual counts)</h2>
     <div class="tabs">
-      <button class="tab active" id="tabKABCO">KABCO scale</button>
-      <button class="tab" id="tabAIS">AIS scale</button>
+      <button class="tab" id="tabKABCO">KABCO scale</button>
+      <button class="tab active" id="tabAIS">AIS scale</button>
     </div>
-    <div id="panelKABCO">
+    <div id="panelKABCO" style="display:none;">
       <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by severity. Decimals accepted for multi-year averages. It is recommended to use five-year averages for crash counts. <span style="color:var(--red);">Values are linked — editing here updates the AIS panel.</span></p>
       <div class="scale-row"><label>K &mdash; Fatal</label><input type="number" id="kK" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>A &mdash; Incapacitating injury</label><input type="number" id="kA" value="1" min="0" step="0.1"></div>
@@ -517,17 +518,17 @@
       <div style="margin-top:12px;">
         <button type="button" id="toggleKabcoCosts" class="toggle-link">&#9656; Edit unit costs (USDOT/KABCO defaults)</button>
         <div id="kabcoCostPanel" class="cost-panel" style="display:none;">
-          <p class="note">Unit costs in $ (USDOT/KABCO, 2023 defaults). Changes recalculate immediately.</p>
-          <div class="scale-row"><label>K &mdash; Fatal ($)</label><input type="number" id="cK" value="12500000" min="0" step="1000"></div>
-          <div class="scale-row"><label>A &mdash; Incapacitating injury ($)</label><input type="number" id="cA" value="582000" min="0" step="1000"></div>
-          <div class="scale-row"><label>B &mdash; Non-incapacitating injury ($)</label><input type="number" id="cB" value="176000" min="0" step="1000"></div>
-          <div class="scale-row"><label>C &mdash; Possible injury ($)</label><input type="number" id="cC" value="97600" min="0" step="100"></div>
-          <div class="scale-row"><label>O &mdash; Property damage only ($)</label><input type="number" id="cO" value="11800" min="0" step="100"></div>
+          <p class="note">Unit costs in $ (USDOT/KABCO, 2024 $). Changes recalculate immediately.</p>
+          <div class="scale-row"><label>K &mdash; Fatal ($)</label><input type="number" id="cK" value="13700000" min="0" step="1000"></div>
+          <div class="scale-row"><label>A &mdash; Incapacitating injury ($)</label><input type="number" id="cA" value="1302300" min="0" step="1000"></div>
+          <div class="scale-row"><label>B &mdash; Non-incapacitating injury ($)</label><input type="number" id="cB" value="256300" min="0" step="1000"></div>
+          <div class="scale-row"><label>C &mdash; Possible injury ($)</label><input type="number" id="cC" value="122400" min="0" step="100"></div>
+          <div class="scale-row"><label>O &mdash; Property damage only ($)</label><input type="number" id="cO" value="5500" min="0" step="100"></div>
           <button type="button" id="resetKabcoCosts" class="reset-btn">Reset to USDOT defaults</button>
         </div>
       </div>
     </div>
-    <div id="panelAIS" style="display:none;">
+    <div id="panelAIS">
       <p class="note" style="margin-bottom:10px;">Enter average annual crash counts by AIS level. Decimals accepted. It is recommended to use five-year averages for crash counts. <span style="color:var(--red);">Values are linked — editing here updates the KABCO panel.</span></p>
       <div class="scale-row"><label>AIS 6 &mdash; Fatal</label><input type="number" id="aK" value="0" min="0" step="0.1"></div>
       <div class="scale-row"><label>AIS 5 &mdash; Critical</label><input type="number" id="aA5" value="0" min="0" step="0.1"></div>
@@ -539,14 +540,14 @@
       <div style="margin-top:12px;">
         <button type="button" id="toggleAisCosts" class="toggle-link">&#9656; Edit unit costs (USDOT/AIS defaults)</button>
         <div id="aisCostPanel" class="cost-panel" style="display:none;">
-          <p class="note">Unit costs in $ (USDOT/AIS, 2023 defaults). Changes recalculate immediately.</p>
-          <div class="scale-row"><label>AIS 6 &mdash; Fatal ($)</label><input type="number" id="cAK" value="12500000" min="0" step="1000"></div>
-          <div class="scale-row"><label>AIS 5 &mdash; Critical ($)</label><input type="number" id="cA5" value="7700000" min="0" step="1000"></div>
-          <div class="scale-row"><label>AIS 4 &mdash; Severe ($)</label><input type="number" id="cA4" value="2600000" min="0" step="1000"></div>
-          <div class="scale-row"><label>AIS 3 &mdash; Serious ($)</label><input type="number" id="cA3" value="697000" min="0" step="1000"></div>
-          <div class="scale-row"><label>AIS 2 &mdash; Moderate ($)</label><input type="number" id="cA2" value="176000" min="0" step="1000"></div>
-          <div class="scale-row"><label>AIS 1 &mdash; Minor ($)</label><input type="number" id="cA1" value="97600" min="0" step="100"></div>
-          <div class="scale-row"><label>AIS 0 &mdash; Property damage only ($)</label><input type="number" id="cA0" value="11800" min="0" step="100"></div>
+          <p class="note">Unit costs in $ (USDOT/AIS, 2024 $). Changes recalculate immediately.</p>
+          <div class="scale-row"><label>AIS 6 &mdash; Fatal ($)</label><input type="number" id="cAK" value="13700000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 5 &mdash; Critical ($)</label><input type="number" id="cA5" value="8440000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 4 &mdash; Severe ($)</label><input type="number" id="cA4" value="5820000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 3 &mdash; Serious ($)</label><input type="number" id="cA3" value="1560000" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 2 &mdash; Moderate ($)</label><input type="number" id="cA2" value="256300" min="0" step="1000"></div>
+          <div class="scale-row"><label>AIS 1 &mdash; Minor ($)</label><input type="number" id="cA1" value="122400" min="0" step="100"></div>
+          <div class="scale-row"><label>AIS 0 &mdash; Property damage only ($)</label><input type="number" id="cA0" value="5500" min="0" step="100"></div>
           <button type="button" id="resetAisCosts" class="reset-btn">Reset to USDOT defaults</button>
         </div>
       </div>
@@ -572,7 +573,7 @@
         <span class="note">Personal vehicles only. Converts veh-hrs to person-hrs of delay.</span>
       </div>
     </div>
-    <p class="note" style="margin-top:10px;">Capital cost is a one-time Year-0 expense (not discounted). VSL escalates 1.07%/yr; VOT escalates 1.6%/yr.</p>
+    <p class="note" style="margin-top:10px;">Capital cost is a one-time Year-0 expense (not discounted). Unit costs are in 2024 $. VSL escalates 1.07%/yr; VOT escalates 1.6%/yr — both from 2024 to the project opening year, then through the analysis period.</p>
   </div>
 
   <!-- ── Results ── -->
@@ -625,8 +626,9 @@
     <!-- Methodology -->
     <div style="margin-top:1rem; padding:1rem 0; border-top:1px solid var(--border);">
       <p class="note"><strong>Methodology notes:</strong><br>
-        VSL: $12.5M (USDOT 2023), escalated at 1.07%/yr. Injury severity costs use KABCO/AIS equivalency factors per FHWA Highway Safety Manual.
-        Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) veh-hrs/yr &times; blended VOT (personal &times; occupancy + 2&times; commercial rate), escalated at 1.6%/yr, discounted over the analysis period.
+        KABCO unit costs: K $13,700,000 · A $1,302,300 · B $256,300 · C $122,400 · O $5,500 (USDOT 2024 $). AIS unit costs scaled proportionally.
+        All crash and delay costs are escalated from the 2024 base year to the project opening year, then continue to escalate through the analysis period (VSL 1.07%/yr, VOT 1.6%/yr).
+        Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) veh-hrs/yr &times; blended VOT (personal &times; occupancy + 2&times; commercial rate), discounted over the analysis period.
         Capital cost is a one-time Year-0 expense (not discounted).
         NPV = PV(crash reduction benefits at chosen reduction %) &minus; capital cost &minus; PV(travel delay costs).
         Research (FHWA) typically finds road diets reduce crashes 19&ndash;47%; central estimate ~29%.
@@ -653,7 +655,7 @@
 (function () {
   'use strict';
 
-  var currentScale = 'KABCO';
+  var currentScale = 'AIS';
   var calcData = null;
   var syncInProgress = false;
 
@@ -770,8 +772,8 @@
   });
 
   // ── Unit cost panel toggles ──
-  var KABCO_DEFAULTS = {cK:12500000, cA:582000, cB:176000, cC:97600, cO:11800};
-  var AIS_DEFAULTS   = {cAK:12500000, cA5:7700000, cA4:2600000, cA3:697000, cA2:176000, cA1:97600, cA0:11800};
+  var KABCO_DEFAULTS = {cK:13700000, cA:1302300, cB:256300, cC:122400, cO:5500};
+  var AIS_DEFAULTS   = {cAK:13700000, cA5:8440000, cA4:5820000, cA3:1560000, cA2:256300, cA1:122400, cA0:5500};
 
   document.getElementById('toggleKabcoCosts').addEventListener('click', function() {
     var panel = document.getElementById('kabcoCostPanel');
@@ -823,8 +825,8 @@
 
   // ── Helpers ──
   var COST_DEFAULTS_MAP = {
-    cK:12500000, cA:582000, cB:176000, cC:97600, cO:11800,
-    cAK:12500000, cA5:7700000, cA4:2600000, cA3:697000, cA2:176000, cA1:97600, cA0:11800
+    cK:13700000, cA:1302300, cB:256300, cC:122400, cO:5500,
+    cAK:13700000, cA5:8440000, cA4:5820000, cA3:1560000, cA2:256300, cA1:122400, cA0:5500
   };
   function gv(id) {
     var v = parseFloat(document.getElementById(id).value);
@@ -869,6 +871,10 @@
     var vslEsc = 0.0107;  // VSL escalation 1.07%/yr
     var votEsc = 0.016;   // VOT escalation 1.60%/yr
 
+    var baseYear = 2024;
+    var openYear = Math.max(baseYear, Math.round(gv('openYear')));
+    var yearsToOpen = openYear - baseYear;  // years from 2024 base to project opening
+
     var annualCrashBase = getAnnualCrashCost();
     var delayVehHrsYear = aadt * 365 * len * Math.max(0, 1 / spd1 - 1 / spd0);
     // personal uses occupancy to convert to person-hrs; commercial uses 2× rate, 1 person assumed
@@ -881,8 +887,8 @@
 
     for (var t = 1; t <= n; t++) {
       var df       = Math.pow(1 + r, t);
-      var pvCrashT = annualCrashBase * Math.pow(1 + vslEsc, t) / df;
-      var pvDelayT = delayVehHrsYear * vot * Math.pow(1 + votEsc, t) * blendFactor / df;
+      var pvCrashT = annualCrashBase * Math.pow(1 + vslEsc, yearsToOpen + t) / df;
+      var pvDelayT = delayVehHrsYear * vot * Math.pow(1 + votEsc, yearsToOpen + t) * blendFactor / df;
       pvCrashPerYear.push(pvCrashT);
       pvDelayPerYear.push(pvDelayT);
       pvCrashFull += pvCrashT;
@@ -892,7 +898,7 @@
     var restripe     = stripe;
     var totalCost    = restripe + pvDelay;
     var breakevenPct = pvCrashFull > 0 ? Math.min(100, totalCost / pvCrashFull * 100) : null;
-    var votBlendedY1 = vot * Math.pow(1 + votEsc, 1) * blendFactor;
+    var votBlendedY1 = vot * Math.pow(1 + votEsc, yearsToOpen + 1) * blendFactor;
 
     calcData = {
       restripe, pvDelay, totalCost,
@@ -996,8 +1002,8 @@
     return '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + content + '</td>';
   }
 
-  // Kick off — sync AIS from default KABCO values, then calculate
-  syncAisFromKabco();
+  // Kick off — sync KABCO from default AIS values, then calculate
+  syncKabcoFromAis();
   calculate();
 
   // ── Print / PDF Summary ──
@@ -1102,6 +1108,7 @@
         '<table class="kv-table"><tbody>' +
           '<tr><td>Commercial traffic</td><td>' + gv('pctCommercial') + '%</td></tr>' +
           '<tr><td>Analysis period</td><td>' + gv('years') + ' years</td></tr>' +
+          '<tr><td>Project opening year</td><td>' + Math.round(gv('openYear')) + '</td></tr>' +
           '<tr><td>Discount rate</td><td>' + gv('discountRate') + '%</td></tr>' +
           '<tr><td>Vehicle occupancy</td><td>' + gv('vehicleOccupancy') + ' persons/veh</td></tr>' +
         '</tbody></table>' +
@@ -1140,8 +1147,9 @@
         '<th>Capital Cost</th><th>Present Value</th><th>Cumulative NPV</th>' +
       '</tr></thead><tbody>' + tableRows + '</tbody><tfoot>' + footRow + '</tfoot></table>' +
 
-      '<p class="note"><strong>Methodology:</strong> VSL $12.5M (USDOT 2023), escalated 1.07%/yr. ' +
-      'Travel delay = AADT × 365 × length × (1/v₂ − 1/v₁) veh-hrs/yr × blended VOT, escalated 1.6%/yr. ' +
+      '<p class="note"><strong>Methodology:</strong> KABCO unit costs (USDOT 2024 $): K $13,700,000 · A $1,302,300 · B $256,300 · C $122,400 · O $5,500. ' +
+      'All crash and delay costs escalated from 2024 base year to project opening year, then through the analysis period (VSL 1.07%/yr, VOT 1.6%/yr). ' +
+      'Travel delay = AADT × 365 × length × (1/v₂ − 1/v₁) veh-hrs/yr × blended VOT. ' +
       'Capital cost is a one-time Year-0 expense (not discounted). ' +
       'NPV = PV(crash reduction benefits) − capital cost − PV(delay costs). ' +
       'FHWA research: road diets typically reduce crashes 19–47%; central estimate ~29%.</p>' +
