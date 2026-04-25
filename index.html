@@ -494,9 +494,9 @@
       <div class="field"><label>Initial speed limit (mph)</label><input type="number" id="speedBefore" value="40" min="20" max="65" step="5"></div>
       <div class="field"><label>Target speed limit (mph)</label><input type="number" id="speedAfter" value="35" min="20" max="65" step="5"></div>
       <div class="field"><label>Daily traffic &mdash; AADT (veh/day)</label><input type="number" id="aadt" value="12000" min="500" step="500"></div>
-      <div class="field"><label>Commercial traffic (%)</label><input type="number" id="pctCommercial" value="10" min="0" max="100" step="1"><span class="note">Trucks/freight; valued at 2&times; personal travel time rate</span></div>
+      <div class="field"><label>Commercial traffic (%)</label><input type="number" id="pctCommercial" value="10" min="0" max="100" step="1"><span class="note">Trucks/freight; delay cost calculated separately using commercial VOT.</span></div>
       <div class="field"><label>Analysis period (years)</label><input type="number" id="years" value="20" min="5" max="40" step="1"></div>
-      <div class="field"><label>Project opening year</label><input type="number" id="openYear" value="2026" min="2024" max="2060" step="1"><span class="note">Costs in 2024 $ are escalated to this year (VSL 1.07%/yr, VOT 1.6%/yr).</span></div>
+      <div class="field"><label>Project opening year</label><input type="number" id="openYear" value="2024" min="2024" max="2060" step="1"><span class="note">Costs in 2024 $ are escalated to this year (VSL 1.07%/yr, VOT 1.6%/yr).</span></div>
       <div class="field"><label>Discount rate (%)</label><input type="number" id="discountRate" value="3" min="1" max="10" step="0.5"></div>
     </div>
   </div>
@@ -568,9 +568,14 @@
         <input type="number" id="stripeCost" value="50000" min="0" step="1000">
       </div>
       <div class="field">
-        <label>Value of travel time ($/person-hr)</label>
+        <label>Personal VOT ($/person-hr)</label>
         <input type="number" id="vot" value="21.10" min="5" step="0.50">
-        <span class="note">USDOT 2023: $17.90&ndash;$21.10/hr personal &middot; 2&times; for commercial &middot; escalates 1.6%/yr</span>
+        <span class="note">USDOT 2023: $17.90&ndash;$21.10/hr personal travel time. Escalates 1.6%/yr.</span>
+      </div>
+      <div class="field">
+        <label>Commercial VOT ($/veh-hr)</label>
+        <input type="number" id="votCommercial" value="32.10" min="5" step="0.50">
+        <span class="note">USDOT 2023: ~$32.10/hr for commercial/truck travel time. Escalates 1.6%/yr.</span>
       </div>
       <div class="field">
         <label>Vehicle occupancy (persons/veh)</label>
@@ -578,7 +583,7 @@
         <span class="note">Personal vehicles only. Converts veh-hrs to person-hrs of delay.</span>
       </div>
     </div>
-    <p class="note" style="margin-top:10px;">Capital cost is a one-time Year-1 expense (not discounted). Unit costs are in 2024 $. VSL escalates 1.07%/yr; VOT escalates 1.6%/yr — both from 2024 to the project opening year, then through the analysis period.</p>
+    <p class="note" style="margin-top:10px;">Capital cost is a one-time Year-1 expense (not discounted). Unit costs are in 2024 $. VSL escalates 1.07%/yr; VOT escalates 1.6%/yr — both from 2024 to the project opening year, then through the analysis period. Personal and commercial delay costs are calculated separately and summed.</p>
   </div>
 
   <!-- ── Results ── -->
@@ -633,7 +638,7 @@
       <p class="note"><strong>Methodology notes:</strong><br>
         KABCO unit costs: K $13,700,000 · A $1,302,300 · B $256,300 · C $122,400 · O $5,500 (USDOT 2024 $). AIS unit costs scaled proportionally.
         All crash and delay costs are escalated from the 2024 base year to the project opening year, then continue to escalate through the analysis period (VSL 1.07%/yr, VOT 1.6%/yr).
-        Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) veh-hrs/yr &times; blended VOT (personal &times; occupancy + 2&times; commercial rate), discounted over the analysis period.
+        Travel delay = AADT &times; 365 &times; length &times; (1/v&#x2082; &minus; 1/v&#x2081;) veh-hrs/yr, split into personal (veh-hrs &times; occupancy &times; personal VOT) and commercial (veh-hrs &times; commercial VOT) streams, summed and discounted over the analysis period.
         Capital cost is a one-time Year-1 expense (not discounted).
         NPV = PV(crash reduction benefits at chosen reduction %) &minus; capital cost &minus; PV(travel delay costs).
         Research (FHWA) typically finds road diets reduce crashes 19&ndash;47%; central estimate ~29%.
@@ -840,7 +845,8 @@
   // ── Helpers ──
   var COST_DEFAULTS_MAP = {
     cK:13700000, cA:1302300, cB:256300, cC:122400, cO:5500,
-    cAK:13700000, cA5:8440000, cA4:5820000, cA3:1560000, cA2:256300, cA1:122400, cA0:5500
+    cAK:13700000, cA5:8440000, cA4:5820000, cA3:1560000, cA2:256300, cA1:122400, cA0:5500,
+    votCommercial: 32.10
   };
   function gv(id) {
     var v = parseFloat(document.getElementById(id).value);
@@ -891,8 +897,11 @@
 
     var annualCrashBase = getAnnualCrashCost();
     var delayVehHrsYear = aadt * 365 * len * Math.max(0, 1 / spd1 - 1 / spd0);
-    // personal uses occupancy to convert to person-hrs; commercial uses 2× rate, 1 person assumed
-    var blendFactor = (1 - pctCom) * occ + pctCom * 2;
+    var votCom = gv('votCommercial');
+
+    // Split vehicle-hours into personal and commercial streams
+    var vehHrsPersonal   = delayVehHrsYear * (1 - pctCom);
+    var vehHrsCommercial = delayVehHrsYear * pctCom;
 
     // Year-by-year PV arrays (t=1..n)
     var pvCrashPerYear = [];
@@ -901,8 +910,11 @@
 
     for (var t = 1; t <= n; t++) {
       var df       = Math.pow(1 + r, t);
+      var escVot   = Math.pow(1 + votEsc, yearsToOpen + t);
       var pvCrashT = annualCrashBase * Math.pow(1 + vslEsc, yearsToOpen + t) / df;
-      var pvDelayT = delayVehHrsYear * vot * Math.pow(1 + votEsc, yearsToOpen + t) * blendFactor / df;
+      var pvDelayPersonal    = vehHrsPersonal   * vot    * occ * escVot / df;
+      var pvDelayCommercial  = vehHrsCommercial * votCom       * escVot / df;
+      var pvDelayT = pvDelayPersonal + pvDelayCommercial;
       pvCrashPerYear.push(pvCrashT);
       pvDelayPerYear.push(pvDelayT);
       pvCrashFull += pvCrashT;
@@ -912,7 +924,9 @@
     var restripe     = stripe;
     var totalCost    = restripe + pvDelay;
     var breakevenPct = pvCrashFull > 0 ? Math.min(100, totalCost / pvCrashFull * 100) : null;
-    var votBlendedY1 = vot * Math.pow(1 + votEsc, yearsToOpen + 1) * blendFactor;
+    var escY1        = Math.pow(1 + votEsc, yearsToOpen + 1);
+    var annDelayPersonalY1   = vehHrsPersonal   * vot    * occ * escY1;
+    var annDelayCommercialY1 = vehHrsCommercial * votCom       * escY1;
 
     calcData = {
       restripe, pvDelay, totalCost,
@@ -923,12 +937,13 @@
 
     // ── Summary cards ──
     document.getElementById('costCards').innerHTML =
-      metricHTML('Capital cost (Year 1)',                fmt(restripe),                   '') +
-      metricHTML('Blended VOT yr-1 (occ+comm.)',     '$' + votBlendedY1.toFixed(2) + '/hr', 'neu') +
-      metricHTML('Delay cost PV (' + n + ' yr)',     fmt(pvDelay),                    'neg') +
-      metricHTML('Total cost (PV)',                  fmt(totalCost),                  'neg') +
-      metricHTML('Annual crash cost (baseline)',      fmt(annualCrashBase),            '') +
-      metricHTML('Crash reduction benefit PV (100%)', fmt(pvCrashFull),               'pos');
+      metricHTML('Capital cost (Year 1)',                  fmt(restripe),                        '') +
+      metricHTML('Personal delay cost yr-1',               fmt(annDelayPersonalY1),              'neg') +
+      metricHTML('Commercial delay cost yr-1',             fmt(annDelayCommercialY1),            'neg') +
+      metricHTML('Delay cost PV (' + n + ' yr)',           fmt(pvDelay),                         'neg') +
+      metricHTML('Total cost (PV)',                        fmt(totalCost),                       'neg') +
+      metricHTML('Annual crash cost (baseline)',            fmt(annualCrashBase),                 '') +
+      metricHTML('Crash reduction benefit PV (100%)',      fmt(pvCrashFull),                     'pos');
 
     var box = document.getElementById('breakevenBox');
     if (breakevenPct !== null && pvCrashFull > 0) {
@@ -1124,7 +1139,8 @@
       '<h2>Inputs — Cost Parameters</h2>' +
       '<table class="kv-table"><tbody>' +
         '<tr><td>Capital cost (total project)</td><td>$' + gv('stripeCost').toLocaleString() + '</td></tr>' +
-        '<tr><td>Value of travel time</td><td>$' + gv('vot').toFixed(2) + ' / person-hr</td></tr>' +
+        '<tr><td>Personal VOT</td><td>$' + gv('vot').toFixed(2) + ' / person-hr</td></tr>' +
+        '<tr><td>Commercial VOT</td><td>$' + gv('votCommercial').toFixed(2) + ' / veh-hr</td></tr>' +
       '</tbody></table>' +
 
       '<h2>Calculations — Cost &amp; Benefit Summary (Present Value)</h2>' +
@@ -1153,7 +1169,7 @@
 
       '<p class="note"><strong>Methodology:</strong> KABCO unit costs (USDOT 2024 $): K $13,700,000 · A $1,302,300 · B $256,300 · C $122,400 · O $5,500. ' +
       'All crash and delay costs escalated from 2024 base year to project opening year, then through the analysis period (VSL 1.07%/yr, VOT 1.6%/yr). ' +
-      'Travel delay = AADT × 365 × length × (1/v₂ − 1/v₁) veh-hrs/yr × blended VOT. ' +
+      'Travel delay = AADT × 365 × length × (1/v₂ − 1/v₁) veh-hrs/yr, split into personal (× occupancy × personal VOT) and commercial (× commercial VOT) streams, summed and discounted. ' +
       'Capital cost is a one-time Year-1 expense (not discounted). ' +
       'NPV = PV(crash reduction benefits) − capital cost − PV(delay costs). ' +
       'FHWA research: road diets typically reduce crashes 19–47%; central estimate ~29%.</p>' +
