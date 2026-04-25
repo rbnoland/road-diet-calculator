@@ -590,6 +590,12 @@
   <div id="resultsArea">
     <hr class="divider" style="margin-top:1.5rem;">
 
+    <!-- Travel time panel -->
+    <div class="card">
+      <h2>Annual travel time</h2>
+      <div class="metrics-grid" id="travelTimeCards"></div>
+    </div>
+
     <!-- Summary tiles -->
     <div class="card">
       <h2>Cost &amp; benefit summary &mdash; present value</h2>
@@ -896,12 +902,40 @@
     var yearsToOpen = openYear - baseYear;  // years from 2024 base to project opening
 
     var annualCrashBase = getAnnualCrashCost();
-    var delayVehHrsYear = aadt * 365 * len * Math.max(0, 1 / spd1 - 1 / spd0);
+
+    // ── Travel time calculations ──
+    // Baseline annual vehicle-hours at original speed (v₁)
+    var baseVehHrsTotal      = aadt * 365 * len / spd0;
+    var baseVehHrsPersonal   = baseVehHrsTotal * (1 - pctCom);
+    var baseVehHrsCommercial = baseVehHrsTotal * pctCom;
+    // Baseline person-hours (personal uses occupancy; commercial = 1 driver)
+    var basePersHrsPersonal   = baseVehHrsPersonal   * occ;
+    var basePersHrsCommercial = baseVehHrsCommercial;
+
+    // Additional annual vehicle-hours due to speed reduction (v₂ vs v₁)
+    var delayVehHrsYear      = aadt * 365 * len * Math.max(0, 1 / spd1 - 1 / spd0);
+    var delayVehHrsPersonal  = delayVehHrsYear * (1 - pctCom);
+    var delayVehHrsCommercial= delayVehHrsYear * pctCom;
+    var delayPersHrsPersonal  = delayVehHrsPersonal  * occ;
+    var delayPersHrsCommercial= delayVehHrsCommercial;
+
+    function fmtHrs(h) {
+      if (h >= 1e6) return (h / 1e6).toFixed(1) + 'M hrs/yr';
+      if (h >= 1e3) return (h / 1e3).toFixed(1) + 'K hrs/yr';
+      return h.toFixed(1) + ' hrs/yr';
+    }
+
+    document.getElementById('travelTimeCards').innerHTML =
+      metricHTML('Baseline: personal travel<br><span style="font-size:11px;font-weight:400;color:var(--text-hint)">at ' + spd0 + ' mph · person-hrs/yr</span>',  fmtHrs(basePersHrsPersonal),    '') +
+      metricHTML('Baseline: commercial travel<br><span style="font-size:11px;font-weight:400;color:var(--text-hint)">at ' + spd0 + ' mph · veh-hrs/yr</span>',    fmtHrs(basePersHrsCommercial),  '') +
+      metricHTML('Added delay: personal<br><span style="font-size:11px;font-weight:400;color:var(--text-hint)">' + spd0 + ' → ' + spd1 + ' mph · person-hrs/yr</span>', fmtHrs(delayPersHrsPersonal),  spd1 < spd0 ? 'neg' : '') +
+      metricHTML('Added delay: commercial<br><span style="font-size:11px;font-weight:400;color:var(--text-hint)">' + spd0 + ' → ' + spd1 + ' mph · veh-hrs/yr</span>',  fmtHrs(delayPersHrsCommercial), spd1 < spd0 ? 'neg' : '');
+
     var votCom = gv('votCommercial');
 
     // Split vehicle-hours into personal and commercial streams
-    var vehHrsPersonal   = delayVehHrsYear * (1 - pctCom);
-    var vehHrsCommercial = delayVehHrsYear * pctCom;
+    var vehHrsPersonal   = delayVehHrsPersonal;
+    var vehHrsCommercial = delayVehHrsCommercial;
 
     // Year-by-year PV arrays (t=1..n)
     var pvCrashPerYear = [];
