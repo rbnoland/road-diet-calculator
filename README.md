@@ -123,7 +123,7 @@ PV_crash(t) = annualCrashCost
 
 `yearsToOpen = openingYear − 2024`
 
-Summing across all years yields **pvCrashFull** — the present value of eliminating crashes based on the percent selected in the slider.
+Summing across all years yields **pvCrashFull** — the present value of eliminating 100% of crashes.
 
 ### Travel delay cost
 
@@ -188,14 +188,14 @@ The **Print / Save PDF Summary** button opens a print-ready page in a new tab. U
 
 | Parameter | Value | Source |
 |---|---|---|
-| KABCO unit costs | See table above | USDOT 2024 $ |
-| AIS unit costs | See table above | USDOT 2024 $ |
-| VSL escalation rate | 1.07%/yr | USDOT guidance |
-| VOT escalation rate | 1.60%/yr | USDOT guidance |
-| Personal VOT | $17.90–$21.10/hr | USDOT 2023 |
-| Commercial VOT | ~$32.10/veh-hr | USDOT 2023 |
-| AIS→KABCO matrix | FHWA probability distribution | AIS_to_KABCO_matrix.xlsx (FHWA) |
-| Typical crash reduction | 19–47%; central ~29% | FHWA road diet research |
+| KABCO unit costs | See table above | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
+| AIS unit costs | See table above | Blincoe et al. (2023). *The Economic and Societal Impact of Motor Vehicle Crashes, 2019*. NHTSA Report No. DOT HS 813 403 |
+| VSL escalation rate | 1.07%/yr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
+| VOT escalation rate | 1.60%/yr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
+| Personal VOT | $17.90–$21.10/hr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
+| Commercial VOT | ~$32.10/veh-hr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
+| AIS→KABCO matrix | NHTSA probability distribution | NHTSA (July 2011), as published in the [USDOT TIGER/FASTLANE BCA Resource Guide](https://www.transportation.gov/sites/dot.gov/files/docs/BCARG2016March.pdf) |
+| Typical crash reduction | 19–47%; central ~29% | [FHWA Proven Safety Countermeasures: Road Diets](https://highways.dot.gov/safety/proven-safety-countermeasures/road-diets-roadway-reconfiguration) |
 | BCA framework | — | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
 
 ---
