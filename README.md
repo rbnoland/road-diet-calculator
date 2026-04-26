@@ -123,7 +123,7 @@ PV_crash(t) = annualCrashCost
 
 `yearsToOpen = openingYear − 2024`
 
-Summing across all years yields **pvCrashFull** — the present value of eliminating 100% of crashes.
+Summing across all years yields **pvCrashFull** — the present value of eliminating crashes based on the percent selected in the slider.
 
 ### Travel delay cost
 
