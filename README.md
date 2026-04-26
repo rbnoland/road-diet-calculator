@@ -189,12 +189,12 @@ The **Print / Save PDF Summary** button opens a print-ready page in a new tab. U
 | Parameter | Value | Source |
 |---|---|---|
 | KABCO unit costs | See table above | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
-| AIS unit costs | See table above | Blincoe et al. (2023). *The Economic and Societal Impact of Motor Vehicle Crashes, 2019*. NHTSA Report No. DOT HS 813 403 |
+| AIS unit costs | See table above | [USDOT TIGER Benefit-Cost Analysis Resource Guide](https://railroads.dot.gov/elibrary/tiger-benefit-cost-analysis-resource-guide) (Table 1: Value of Injuries, AIS fractions of VSL) |
 | VSL escalation rate | 1.07%/yr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
 | VOT escalation rate | 1.60%/yr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
 | Personal VOT | $17.90–$21.10/hr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
 | Commercial VOT | ~$32.10/veh-hr | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
-| AIS→KABCO matrix | NHTSA probability distribution | NHTSA (July 2011), as published in the [USDOT TIGER/FASTLANE BCA Resource Guide](https://www.transportation.gov/sites/dot.gov/files/docs/BCARG2016March.pdf) |
+| AIS→KABCO matrix | NHTSA probability distribution | [USDOT TIGER Benefit-Cost Analysis Resource Guide](https://railroads.dot.gov/elibrary/tiger-benefit-cost-analysis-resource-guide) (Part II, Section 3: Converting Available Accident Data into AIS Data) |
 | Typical crash reduction | 19–47%; central ~29% | [FHWA Proven Safety Countermeasures: Road Diets](https://highways.dot.gov/safety/proven-safety-countermeasures/road-diets-roadway-reconfiguration) |
 | BCA framework | — | [USDOT Benefit-Cost Analysis Guidance](https://www.transportation.gov/mission/office-secretary/office-policy/transportation-policy/benefit-cost-analysis-guidance) |
 
