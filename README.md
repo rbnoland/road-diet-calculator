@@ -1,4 +1,4 @@
-# About This Tool
+# Road diet cost-benefit analysis calculator
 
 ## What is a road diet?
 
