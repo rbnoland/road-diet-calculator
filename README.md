@@ -6,6 +6,8 @@ A road diet is a way of redesigning a street to make it safer without closing it
 
 The center turn lane removes a major source of crashes. On a traditional four-lane road, drivers turning left must slow or stop across a live lane of traffic, creating rear-end and side-swipe collisions. The center turn lane gives turning drivers a dedicated space to wait, out of the flow of through traffic. Research by the Federal Highway Administration (FHWA) consistently finds that road diets reduce crashes by roughly 19–47%, with a typical reduction around 29%.
 
+This calculator can also be used to any speed reduction policy.  It will estimate the trade offs between the increase in travel times versus the reduction in traffic crashes for a specific road.
+
 ---
 
 ## What does this calculator do?
