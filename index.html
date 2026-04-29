@@ -508,6 +508,10 @@
       <button class="tab active" id="tabKABCO">KABCO scale</button>
       <button class="tab" id="tabAIS">AIS scale</button>
     </div>
+    <div id="scaleDescription" style="margin:0 0 10px;font-size:12px;color:var(--text-muted);padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--border);line-height:1.6;">
+      <strong>KABCO</strong> is the standard crash severity classification used in U.S. police crash reports, ranging from <strong>K</strong> (Fatal) through <strong>A</strong> (Incapacitating injury), <strong>B</strong> (Non-incapacitating injury), <strong>C</strong> (Possible injury), and <strong>O</strong> (Property damage only). It is the most common format in state crash databases and FHWA safety analyses.
+      <span style="display:block;margin-top:5px;"><strong>AIS (Abbreviated Injury Scale)</strong> is a medical severity classification developed by the Association for the Advancement of Automotive Medicine, ranging from <strong>AIS 6</strong> (Unsurvivable) down to <strong>AIS 0</strong> (No injury / Property damage only). It provides finer injury-severity gradations and is used in health-based and USDOT economic analyses that distinguish injury outcomes at the clinical level.</span>
+    </div>
     <div style="margin:8px 0 12px;font-size:14px;">
       Calculate using:
       <label style="margin-left:12px;cursor:pointer;"><input type="radio" name="calcScale" id="calcScaleKABCO" value="KABCO" checked> KABCO</label>
@@ -1195,7 +1199,7 @@
         '<tr><td>Benefit-Cost Ratio (BCR)</td><td class="' + (bcr >= 1 ? 'pos' : 'neg') + '">' + bcr.toFixed(2) + '×</td></tr>' +
       '</tbody></table>' +
 
-      '<h2>Annual benefits and costs and cumulative NPV</h2>' +
+      '<h2 style="page-break-before:always;padding-top:8px;">Annual benefits and costs and cumulative NPV</h2>' +
       '<table><thead><tr>' +
         '<th>Year</th><th>Crash Reduction Benefit (PV)</th><th>Delay Cost (PV)</th>' +
         '<th>Capital Cost</th><th>Present Value</th><th>Cumulative NPV</th>' +
